@@ -103,20 +103,21 @@ npm.cmd run build
 
 Recommended production setup:
 
-- Frontend: Vercel or Netlify
-- Backend API: Railway or Render web service
-- Database: hosted MySQL such as Railway MySQL, Aiven, PlanetScale, or Hostinger MySQL
+- Frontend: Netlify
+- Backend API: Render web service
+- Database: hosted MySQL such as Aiven, PlanetScale, Railway MySQL, Neon MySQL, or Hostinger MySQL
 - Product images: S3-compatible object storage in production for reliable persistence
 
-Frontend environment variables:
+Frontend environment variables for Netlify:
 
 ```env
 VITE_API_URL=https://your-backend-domain.example.com/api
 ```
 
-Backend environment variables:
+Backend environment variables for Render:
 
 ```env
+NODE_ENV=production
 PORT=5000
 CLIENT_URL=https://your-frontend-domain.example.com
 CLIENT_URLS=https://your-frontend-domain.example.com,https://your-preview-domain.example.com
@@ -137,6 +138,29 @@ S3_PUBLIC_BASE_URL=https://your-public-bucket-url.example.com
 S3_FORCE_PATH_STYLE=false
 ```
 
+Netlify setup:
+
+- Repo: `AgriValue-Frontend`
+- Base directory: leave empty
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Environment variable: `VITE_API_URL=https://your-render-service.onrender.com/api`
+
+Render setup:
+
+- Repo: `AgriValue-Backend` or full repo `AgriValue`
+- If using `AgriValue-Backend`, create a Web Service and let Render use the included `Dockerfile`
+- If using full repo `AgriValue`, import with the included `render.yaml`
+- Health check path: `/api/health`
+- Add all backend env vars before the first deploy
+
+Production checklist:
+
+1. Create the Render backend and confirm `https://your-service.onrender.com/api/health` returns `{"status":"ok"}`.
+2. Create the Netlify frontend with `VITE_API_URL` pointing to the Render backend.
+3. Add the Netlify site domain to both `CLIENT_URL` and `CLIENT_URLS`.
+4. Confirm signup, login, dashboard route refresh, product creation, and image upload.
+
 Extra deployment details:
 
 - `public/_redirects` is included for Netlify SPA routing.
@@ -144,6 +168,7 @@ Extra deployment details:
 - `vercel.json` is included for Vercel SPA routing.
 - `.node-version` pins Node `22.22.0` for consistent deploys.
 - `server/Dockerfile` is included for Docker-based backend deploys on Railway or similar platforms.
+- `render.yaml` is included for Render blueprint-based deployment from the full repository.
 - The backend now accepts multiple frontend origins through `CLIENT_URLS`.
 - If your hosted MySQL provider requires SSL, set `DB_SSL=true`.
 - If you keep `STORAGE_PROVIDER=local`, uploads stay on local disk and may not persist across some hosted deployments. Use S3-compatible storage in production.
