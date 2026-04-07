@@ -29,5 +29,15 @@ export const config = {
     database: process.env.DB_NAME || "agri_value",
     ssl: parseBoolean(process.env.DB_SSL, false),
   },
+  storage: {
+    provider: (process.env.STORAGE_PROVIDER || "local").toLowerCase(),
+    s3Bucket: process.env.S3_BUCKET || "",
+    s3Region: process.env.S3_REGION || "us-east-1",
+    s3Endpoint: process.env.S3_ENDPOINT || "",
+    s3AccessKeyId: process.env.S3_ACCESS_KEY_ID || "",
+    s3SecretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
+    s3PublicBaseUrl: process.env.S3_PUBLIC_BASE_URL || "",
+    s3ForcePathStyle: parseBoolean(process.env.S3_FORCE_PATH_STYLE, false),
+  },
   uploadsDir: path.resolve(process.cwd(), "uploads"),
 };

@@ -106,6 +106,7 @@ Recommended production setup:
 - Frontend: Vercel or Netlify
 - Backend API: Railway or Render web service
 - Database: hosted MySQL such as Railway MySQL, Aiven, PlanetScale, or Hostinger MySQL
+- Product images: S3-compatible object storage in production for reliable persistence
 
 Frontend environment variables:
 
@@ -126,11 +127,23 @@ DB_USER=your-mysql-user
 DB_PASSWORD=your-mysql-password
 DB_NAME=agri_value
 DB_SSL=false
+STORAGE_PROVIDER=s3
+S3_BUCKET=your-bucket
+S3_REGION=your-region
+S3_ENDPOINT=https://your-s3-endpoint.example.com
+S3_ACCESS_KEY_ID=your-access-key
+S3_SECRET_ACCESS_KEY=your-secret-key
+S3_PUBLIC_BASE_URL=https://your-public-bucket-url.example.com
+S3_FORCE_PATH_STYLE=false
 ```
 
 Extra deployment details:
 
 - `public/_redirects` is included for Netlify SPA routing.
+- `netlify.toml` is included for Netlify build + SPA routing.
 - `vercel.json` is included for Vercel SPA routing.
+- `.node-version` pins Node `22.22.0` for consistent deploys.
+- `server/Dockerfile` is included for Docker-based backend deploys on Railway or similar platforms.
 - The backend now accepts multiple frontend origins through `CLIENT_URLS`.
 - If your hosted MySQL provider requires SSL, set `DB_SSL=true`.
+- If you keep `STORAGE_PROVIDER=local`, uploads stay on local disk and may not persist across some hosted deployments. Use S3-compatible storage in production.

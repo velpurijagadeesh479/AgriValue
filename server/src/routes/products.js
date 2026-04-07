@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { getDb } from "../db.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
-import { getUploadUrl, upload } from "../middleware/upload.js";
+import { upload } from "../middleware/upload.js";
+import { deleteUploadedFiles, saveUploadedFiles } from "../storage.js";
 import { formatProduct } from "../utils.js";
 
 const router = Router();
@@ -70,13 +71,14 @@ router.get("/:id", async (req, res) => {
 });
 
 router.post("/", requireAuth, requireRole("farmer"), upload.array("images", 5), async (req, res) => {
+  let imageUrls = [];
   try {
     const { name, category, description, price, quantity, unit, location } = req.body;
     if (!name || !category || !description || !price || !quantity || !unit || !location) {
       return res.status(400).json({ message: "Please fill in all product fields." });
     }
 
-    const imageUrls = (req.files || []).map((file) => getUploadUrl(req, file.filename));
+    imageUrls = await saveUploadedFiles(req, req.files || []);
     const db = getDb();
     const [result] = await db.query(
       `INSERT INTO products (farmer_id, name, category, description, price, quantity, unit, location, image_urls)
@@ -87,6 +89,7 @@ router.post("/", requireAuth, requireRole("farmer"), upload.array("images", 5), 
     const [rows] = await db.query("SELECT * FROM products WHERE id = ?", [result.insertId]);
     res.status(201).json({ product: formatProduct(rows[0]) });
   } catch {
+    await deleteUploadedFiles(imageUrls);
     res.status(500).json({ message: "Unable to create product." });
   }
 });
@@ -117,7 +120,13 @@ router.put("/:id", requireAuth, requireRole("farmer"), async (req, res) => {
 router.delete("/:id", requireAuth, requireRole("farmer"), async (req, res) => {
   try {
     const db = getDb();
+    const [rows] = await db.query("SELECT * FROM products WHERE id = ? AND farmer_id = ?", [req.params.id, req.user.id]);
+    if (!rows[0]) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
     await db.query("DELETE FROM products WHERE id = ? AND farmer_id = ?", [req.params.id, req.user.id]);
+    await deleteUploadedFiles(formatProduct(rows[0]).imageUrls);
     res.json({ message: "Product removed successfully." });
   } catch {
     res.status(500).json({ message: "Unable to remove product." });
